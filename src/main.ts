@@ -174,11 +174,9 @@ function getAndValidateArgs(): Args {
     daysBeforeClose: parseInt(
       core.getInput('days-before-close', {required: true})
     ),
-    staleMessage: core.getInput('stale-issue-message', {required: true}),
-    staleLabel: core.getInput('stale-issue-label', {required: true}),
-    exemptLabels: core
-      .getInput('exempt-issue-label', {required: true})
-      .split(','),
+    staleMessage: core.getInput('stale-message', {required: true}),
+    staleLabel: core.getInput('stale-label', {required: true}),
+    exemptLabels: core.getInput('exempt-labels', {required: true}).split(','),
     operationsPerRun: parseInt(
       core.getInput('operations-per-run', {required: true})
     ),
