@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import * as Octokit from '@octokit/rest';
+import dayjs from 'dayjs';
 
 type Issue = Octokit.IssuesListForRepoResponseItem;
 type IssueLabel = Octokit.IssuesListForRepoResponseItemLabelsItem;
@@ -18,16 +19,76 @@ type Args = {
 
 async function run() {
   try {
-    const args = getAndValidateArgs();
+    let args = getAndValidateArgs();
+    let client = new github.GitHub(args.repoToken);
 
-    const client = new github.GitHub(args.repoToken);
+    if (github.context.issue) {
+      core.info(
+        'Action context contains an issue, check if it is still stale...'
+      );
 
-    console.log('Start processing issues...');
+      await checkIssue(client, args, github.context.issue.number);
+    } else {
+      core.info('Check for stale issues...');
 
-    await processIssues(client, args, args.operationsPerRun);
+      await processIssues(client, args, args.operationsPerRun);
+    }
   } catch (error) {
     core.error(error);
     core.setFailed(error.message);
+  }
+}
+
+async function checkIssue(client: github.GitHub, args: Args, issueId: number) {
+  let issue = (
+    await client.issues.get({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      issue_number: issueId
+    })
+  ).data;
+
+  let isStale = isLabeled(issue, args.staleLabel);
+  if (!isStale) return;
+
+  let comments = (
+    await client.issues.listComments({
+      owner: github.context.repo.owner,
+      repo: github.context.repo.repo,
+      issue_number: issueId,
+      since: dayjs(issue.updated_at)
+        .subtract(args.daysBeforeClose, 'day')
+        .toISOString()
+    })
+  ).data;
+
+  // TODO: Search based on id or something, idk how to detect github-actions created it
+  let staleComment = comments.find(c => c.body === args.staleMessage);
+  console.log(JSON.stringify(staleComment));
+  if (comments[comments.length - 1].body !== args.staleMessage) {
+    try {
+      await client.issues.removeLabel({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: issueId,
+        name: args.staleLabel
+      });
+    } catch (e) {
+      core.warning('Could not remove stale label.');
+    }
+
+    try {
+      // If we can't find a stale comment just forget about it...
+      if (staleComment) {
+        await client.issues.deleteComment({
+          owner: github.context.repo.owner,
+          repo: github.context.repo.repo,
+          comment_id: staleComment.id
+        });
+      }
+    } catch (e) {
+      core.warning('Could not remove stale comment.');
+    }
   }
 }
 
@@ -37,7 +98,7 @@ async function processIssues(
   operationsLeft: number,
   page: number = 1
 ): Promise<number> {
-  const issues = await client.issues.listForRepo({
+  let issues = await client.issues.listForRepo({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     sort: 'updated',
@@ -101,7 +162,7 @@ async function processIssues(
 }
 
 function isLabeled(issue: Issue, label: string): boolean {
-  const labelComparer: (l: IssueLabel) => boolean = l =>
+  let labelComparer: (l: IssueLabel) => boolean = l =>
     label.localeCompare(l.name, undefined, {sensitivity: 'accent'}) === 0;
   return issue.labels.filter(labelComparer).length > 0;
 }
@@ -119,8 +180,8 @@ function isExempt(issue: Issue, labels: Array<string>): boolean {
 }
 
 function wasLastUpdatedBefore(issue: Issue, num_days: number): boolean {
-  const daysInMillis = 1000 * 60 * 60 * 24 * num_days;
-  const millisSinceLastUpdated =
+  let daysInMillis = 1000 * 60 * 60 * 24 * num_days;
+  let millisSinceLastUpdated =
     new Date().getTime() - new Date(issue.updated_at).getTime();
   return millisSinceLastUpdated >= daysInMillis;
 }
@@ -132,7 +193,7 @@ async function markStale(
   staleLabel: string,
   isDryRun: boolean
 ): Promise<number> {
-  console.log(
+  core.info(
     `[STALE] Marking issue #${issue.number} ${
       issue.title
     }, with labels: ${issue.labels.map(l => l.name).join(', ')}, last updated ${
@@ -165,7 +226,7 @@ async function closeIssue(
   issue: Issue,
   isDryRun: boolean
 ): Promise<number> {
-  console.log(
+  core.info(
     `[STALE] Closing issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`
   );
 
@@ -183,7 +244,7 @@ async function closeIssue(
 }
 
 function getAndValidateArgs(): Args {
-  const args = {
+  let args = {
     repoToken: core.getInput('repo-token', {required: true}),
     daysBeforeStale: parseInt(
       core.getInput('days-before-stale', {required: true})

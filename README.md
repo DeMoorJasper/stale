@@ -58,6 +58,8 @@ name: "Close stale issues"
 on:
   schedule:
   - cron: "0 0 * * *"
+  issue_comment:
+  - types: [created]
 
 jobs:
   stale:

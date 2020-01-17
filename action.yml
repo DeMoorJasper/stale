@@ -24,7 +24,7 @@ inputs:
     default: 'stale-ignore, security'
   operations-per-run:
     description: 'The maximum number of operations per run, used to control rate limiting, does not apply to dry runs.'
-    default: 30
+    default: 50
   dry-run:
     description: 'The action will just log what it would do without actually causing any changes to the repo.'
     default: true
