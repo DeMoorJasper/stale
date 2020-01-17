@@ -13,6 +13,7 @@ inputs:
     default: 14
   stale-message:
     description: 'The message to post on the issue when tagging it. If none provided, will not mark issues stale.'
+    default: 'This issue has been marked as stale.'
   stale-label:
     description: 'The label to apply when an issue is stale'
     default: 'Stale'
