@@ -19,7 +19,7 @@ inputs:
     default: 'Stale'
   exempt-labels:
     description: 'Issues with these labels cannor become stale'
-    default: 'pinned, stale-ignore, security, Confirmed Bug, Feature'
+    default: 'stale-ignore, security'
   operations-per-run:
     description: 'The maximum number of operations per run, used to control rate limiting, does not apply to dry runs.'
     default: 30
