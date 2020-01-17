@@ -5,10 +5,11 @@
   "description": "Marks old issues and PRs as stale",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "test": "jest"
+    "test": "jest",
+    "dist": "ncc build ./src/main.ts -o dist"
   },
   "repository": {
     "type": "git",
@@ -44,7 +45,7 @@
   "husky": {
     "skipCI": true,
     "hooks": {
-      "pre-commit": "npm run build && npm run format"
+      "pre-commit": "npm run typecheck && npm run format && npm run dist"
     }
   }
 }
