@@ -7,15 +7,13 @@ type IssueLabel = Octokit.IssuesListForRepoResponseItemLabelsItem;
 
 type Args = {
   repoToken: string;
-  staleIssueMessage: string;
-  stalePrMessage: string;
   daysBeforeStale: number;
   daysBeforeClose: number;
-  staleIssueLabel: string;
-  exemptIssueLabel: string;
-  stalePrLabel: string;
-  exemptPrLabel: string;
+  staleMessage: string;
+  staleLabel: string;
+  exemptLabels: Array<string>;
   operationsPerRun: number;
+  dryRun: boolean;
 };
 
 async function run() {
@@ -51,23 +49,20 @@ async function processIssues(
   }
 
   for (var issue of issues.data.values()) {
-    core.debug(`found issue: ${issue.title} last updated ${issue.updated_at}`);
-    let isPr = !!issue.pull_request;
-
-    let staleMessage = isPr ? args.stalePrMessage : args.staleIssueMessage;
-    if (!staleMessage) {
-      core.debug(`skipping ${isPr ? 'pr' : 'issue'} due to empty message`);
+    // Skip Pull Requests
+    if (!!issue.pull_request) {
       continue;
     }
 
-    let staleLabel = isPr ? args.stalePrLabel : args.staleIssueLabel;
-    let exemptLabel = isPr ? args.exemptPrLabel : args.exemptIssueLabel;
-
-    if (exemptLabel && isLabeled(issue, exemptLabel)) {
+    // Skip Exempt issues
+    if (args.exemptLabels.length && isExempt(issue, args.exemptLabels)) {
       continue;
-    } else if (isLabeled(issue, staleLabel)) {
+    }
+
+    // Check if it's a stale issue
+    if (isLabeled(issue, args.staleLabel)) {
       if (wasLastUpdatedBefore(issue, args.daysBeforeClose)) {
-        operationsLeft -= await closeIssue(client, issue);
+        operationsLeft -= await closeIssue(client, issue, args.dryRun);
       } else {
         continue;
       }
@@ -75,8 +70,9 @@ async function processIssues(
       operationsLeft -= await markStale(
         client,
         issue,
-        staleMessage,
-        staleLabel
+        args.staleMessage,
+        args.staleLabel,
+        args.dryRun
       );
     }
 
@@ -87,6 +83,7 @@ async function processIssues(
       return 0;
     }
   }
+
   return await processIssues(client, args, operationsLeft, page + 1);
 }
 
@@ -94,6 +91,18 @@ function isLabeled(issue: Issue, label: string): boolean {
   const labelComparer: (l: IssueLabel) => boolean = l =>
     label.localeCompare(l.name, undefined, {sensitivity: 'accent'}) === 0;
   return issue.labels.filter(labelComparer).length > 0;
+}
+
+function isExempt(issue: Issue, labels: Array<string>): boolean {
+  let issueLabels = issue.labels;
+  for (let l of issueLabels) {
+    let lowerCaseLabel = l.name.toLowerCase();
+    if (labels.find(exemptLabel => lowerCaseLabel.includes(exemptLabel))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function wasLastUpdatedBefore(issue: Issue, num_days: number): boolean {
@@ -107,9 +116,15 @@ async function markStale(
   client: github.GitHub,
   issue: Issue,
   staleMessage: string,
-  staleLabel: string
+  staleLabel: string,
+  isDryRun: boolean
 ): Promise<number> {
-  core.debug(`marking issue${issue.title} as stale`);
+  core.debug(
+    `[STALE] Marking issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`
+  );
+
+  // Do not perform operation on dry run
+  if (isDryRun) return 0;
 
   await client.issues.createComment({
     owner: github.context.repo.owner,
@@ -130,9 +145,15 @@ async function markStale(
 
 async function closeIssue(
   client: github.GitHub,
-  issue: Issue
+  issue: Issue,
+  isDryRun: boolean
 ): Promise<number> {
-  core.debug(`closing issue ${issue.title} for being stale`);
+  core.debug(
+    `[STALE] Closing issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`
+  );
+
+  // Do not perform operation on dry run
+  if (isDryRun) return 0;
 
   await client.issues.update({
     owner: github.context.repo.owner,
@@ -147,21 +168,21 @@ async function closeIssue(
 function getAndValidateArgs(): Args {
   const args = {
     repoToken: core.getInput('repo-token', {required: true}),
-    staleIssueMessage: core.getInput('stale-issue-message'),
-    stalePrMessage: core.getInput('stale-pr-message'),
     daysBeforeStale: parseInt(
       core.getInput('days-before-stale', {required: true})
     ),
     daysBeforeClose: parseInt(
       core.getInput('days-before-close', {required: true})
     ),
-    staleIssueLabel: core.getInput('stale-issue-label', {required: true}),
-    exemptIssueLabel: core.getInput('exempt-issue-label'),
-    stalePrLabel: core.getInput('stale-pr-label', {required: true}),
-    exemptPrLabel: core.getInput('exempt-pr-label'),
+    staleMessage: core.getInput('stale-issue-message', {required: true}),
+    staleLabel: core.getInput('stale-issue-label', {required: true}),
+    exemptLabels: core
+      .getInput('exempt-issue-label', {required: true})
+      .split(','),
     operationsPerRun: parseInt(
       core.getInput('operations-per-run', {required: true})
-    )
+    ),
+    dryRun: core.getInput('dry-run') == 'true'
   };
 
   for (var numberInput of [
@@ -173,6 +194,10 @@ function getAndValidateArgs(): Args {
       throw Error(`input ${numberInput} did not parse to a valid integer`);
     }
   }
+
+  args.exemptLabels = args.exemptLabels.map(exemptLabel =>
+    exemptLabel.trim().toLowerCase()
+  );
 
   return args;
 }
