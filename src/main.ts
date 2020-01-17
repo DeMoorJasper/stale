@@ -21,6 +21,9 @@ async function run() {
     const args = getAndValidateArgs();
 
     const client = new github.GitHub(args.repoToken);
+
+    console.log('Start processing issues...');
+
     await processIssues(client, args, args.operationsPerRun);
   } catch (error) {
     core.error(error);
@@ -119,7 +122,7 @@ async function markStale(
   staleLabel: string,
   isDryRun: boolean
 ): Promise<number> {
-  core.debug(
+  console.log(
     `[STALE] Marking issue #${issue.number} ${
       issue.title
     }, with labels: ${issue.labels.map(l => l.name).join(', ')}, last updated ${
@@ -152,7 +155,7 @@ async function closeIssue(
   issue: Issue,
   isDryRun: boolean
 ): Promise<number> {
-  core.debug(
+  console.log(
     `[STALE] Closing issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`
   );
 

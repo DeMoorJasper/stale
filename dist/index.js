@@ -2960,6 +2960,7 @@ function run() {
         try {
             const args = getAndValidateArgs();
             const client = new github.GitHub(args.repoToken);
+            console.log('Start processing issues...');
             yield processIssues(client, args, args.operationsPerRun);
         }
         catch (error) {
@@ -3031,7 +3032,7 @@ function wasLastUpdatedBefore(issue, num_days) {
 }
 function markStale(client, issue, staleMessage, staleLabel, isDryRun) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.debug(`[STALE] Marking issue #${issue.number} ${issue.title}, with labels: ${issue.labels.map(l => l.name).join(', ')}, last updated ${issue.updated_at}`);
+        console.log(`[STALE] Marking issue #${issue.number} ${issue.title}, with labels: ${issue.labels.map(l => l.name).join(', ')}, last updated ${issue.updated_at}`);
         // Do not perform operation on dry run
         if (isDryRun)
             return 0;
@@ -3052,7 +3053,7 @@ function markStale(client, issue, staleMessage, staleLabel, isDryRun) {
 }
 function closeIssue(client, issue, isDryRun) {
     return __awaiter(this, void 0, void 0, function* () {
-        core.debug(`[STALE] Closing issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`);
+        console.log(`[STALE] Closing issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`);
         // Do not perform operation on dry run
         if (isDryRun)
             return 0;
