@@ -24,7 +24,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v1
+    - uses: DeMoorJasper/stale@v1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-message: 'Message to comment on stale issues. If none provided, will not mark issues stale'
@@ -43,7 +43,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v1
+    - uses: DeMoorJasper/stale@v1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-message: 'This issue is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
@@ -63,7 +63,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v1
+    - uses: DeMoorJasper/stale@v1
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-message: 'Stale issue message'
