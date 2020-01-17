@@ -49,8 +49,8 @@ async function processIssues(
 
   operationsLeft -= 1;
 
-  let longestDelay =
-    args.daysBeforeClose > args.daysBeforeStale
+  let shortestDelay =
+    args.daysBeforeClose < args.daysBeforeStale
       ? args.daysBeforeClose
       : args.daysBeforeStale;
 
@@ -65,7 +65,7 @@ async function processIssues(
     }
 
     // Return early, no more issues will match
-    if (!wasLastUpdatedBefore(issue, longestDelay)) {
+    if (!wasLastUpdatedBefore(issue, shortestDelay)) {
       return operationsLeft;
     }
 
@@ -76,7 +76,9 @@ async function processIssues(
 
     // Check if it's a stale issue
     if (isLabeled(issue, args.staleLabel)) {
-      operationsLeft -= await closeIssue(client, issue, args.dryRun);
+      if (wasLastUpdatedBefore(issue, args.daysBeforeClose)) {
+        operationsLeft -= await closeIssue(client, issue, args.dryRun);
+      }
     } else if (wasLastUpdatedBefore(issue, args.daysBeforeStale)) {
       operationsLeft -= await markStale(
         client,

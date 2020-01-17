@@ -2981,7 +2981,7 @@ function processIssues(client, args, operationsLeft, page = 1) {
             page: page
         });
         operationsLeft -= 1;
-        let longestDelay = args.daysBeforeClose > args.daysBeforeStale
+        let shortestDelay = args.daysBeforeClose < args.daysBeforeStale
             ? args.daysBeforeClose
             : args.daysBeforeStale;
         if (issues.data.length === 0 || operationsLeft === 0) {
@@ -2993,7 +2993,7 @@ function processIssues(client, args, operationsLeft, page = 1) {
                 continue;
             }
             // Return early, no more issues will match
-            if (!wasLastUpdatedBefore(issue, longestDelay)) {
+            if (!wasLastUpdatedBefore(issue, shortestDelay)) {
                 return operationsLeft;
             }
             // Skip Exempt issues
@@ -3002,7 +3002,9 @@ function processIssues(client, args, operationsLeft, page = 1) {
             }
             // Check if it's a stale issue
             if (isLabeled(issue, args.staleLabel)) {
-                operationsLeft -= yield closeIssue(client, issue, args.dryRun);
+                if (wasLastUpdatedBefore(issue, args.daysBeforeClose)) {
+                    operationsLeft -= yield closeIssue(client, issue, args.dryRun);
+                }
             }
             else if (wasLastUpdatedBefore(issue, args.daysBeforeStale)) {
                 operationsLeft -= yield markStale(client, issue, args.staleMessage, args.staleLabel, args.dryRun);
