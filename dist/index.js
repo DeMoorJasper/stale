@@ -2959,6 +2959,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const dayjs_1 = __importDefault(__webpack_require__(629));
+const GH_ACTIONS_LOGIN = 'github-actions[bot]';
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -2997,10 +2998,8 @@ function checkIssue(client, args, issueId) {
                 .subtract(args.daysBeforeClose, 'day')
                 .toISOString()
         })).data;
-        // TODO: Search based on id or something, idk how to detect github-actions created it
-        let staleComment = comments.find(c => c.body === args.staleMessage);
-        console.log(JSON.stringify(staleComment));
-        if (comments[comments.length - 1].body !== args.staleMessage) {
+        let staleComment = comments.find(c => c.user.login === GH_ACTIONS_LOGIN);
+        if (comments[comments.length - 1].user.login !== GH_ACTIONS_LOGIN) {
             try {
                 yield client.issues.removeLabel({
                     owner: github.context.repo.owner,

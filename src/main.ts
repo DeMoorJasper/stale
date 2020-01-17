@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 
 type Issue = Octokit.IssuesListForRepoResponseItem;
 type IssueLabel = Octokit.IssuesListForRepoResponseItemLabelsItem;
+const GH_ACTIONS_LOGIN = 'github-actions[bot]';
 
 type Args = {
   repoToken: string;
@@ -62,10 +63,8 @@ async function checkIssue(client: github.GitHub, args: Args, issueId: number) {
     })
   ).data;
 
-  // TODO: Search based on id or something, idk how to detect github-actions created it
-  let staleComment = comments.find(c => c.body === args.staleMessage);
-  console.log(JSON.stringify(staleComment));
-  if (comments[comments.length - 1].body !== args.staleMessage) {
+  let staleComment = comments.find(c => c.user.login === GH_ACTIONS_LOGIN);
+  if (comments[comments.length - 1].user.login !== GH_ACTIONS_LOGIN) {
     try {
       await client.issues.removeLabel({
         owner: github.context.repo.owner,
