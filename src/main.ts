@@ -120,7 +120,11 @@ async function markStale(
   isDryRun: boolean
 ): Promise<number> {
   core.debug(
-    `[STALE] Marking issue #${issue.number} ${issue.title} last updated ${issue.updated_at}`
+    `[STALE] Marking issue #${issue.number} ${
+      issue.title
+    }, with labels: ${issue.labels.map(l => l.name).join(', ')}, last updated ${
+      issue.updated_at
+    }`
   );
 
   // Do not perform operation on dry run
