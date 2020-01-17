@@ -2964,7 +2964,7 @@ function run() {
         try {
             let args = getAndValidateArgs();
             let client = new github.GitHub(args.repoToken);
-            if (github.context.issue) {
+            if (github.context.issue && github.context.issue.number) {
                 core.info('Action context contains an issue, check if it is still stale...');
                 yield checkIssue(client, args, github.context.issue.number);
             }

@@ -22,7 +22,7 @@ async function run() {
     let args = getAndValidateArgs();
     let client = new github.GitHub(args.repoToken);
 
-    if (github.context.issue) {
+    if (github.context.issue && github.context.issue.number) {
       core.info(
         'Action context contains an issue, check if it is still stale...'
       );
