@@ -2,6 +2,12 @@
 
 Warns and then closes issues that have had no activity for a  specified amount of time.
 
+## Dry Run
+
+To ensure you don't spam your users and close or label incorrect issues this action defaults to running without actually performing any action, we call this a dry run.
+
+To allow the action to actually perform any action set `dry-run` to true.
+
 ### Usage
 
 See [action.yml](./action.yml) For comprehensive list of options.
@@ -22,6 +28,7 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         stale-message: 'Message to comment on stale issues. If none provided, will not mark issues stale'
+        dry-run: true
 ```
  
 Configure stale timeouts:
