@@ -1,4 +1,4 @@
-name: 'Close Stale Issues'
+name: 'Close Stale Issues Safely'
 description: 'Close issues with no recent activity'
 author: 'DeMoorJasper'
 inputs:
