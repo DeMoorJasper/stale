@@ -40,12 +40,19 @@ async function processIssues(
   const issues = await client.issues.listForRepo({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
+    sort: 'updated',
+    direction: 'asc',
     state: 'open',
     per_page: 100,
     page: page
   });
 
   operationsLeft -= 1;
+
+  let longestDelay =
+    args.daysBeforeClose > args.daysBeforeStale
+      ? args.daysBeforeClose
+      : args.daysBeforeStale;
 
   if (issues.data.length === 0 || operationsLeft === 0) {
     return operationsLeft;
@@ -57,6 +64,11 @@ async function processIssues(
       continue;
     }
 
+    // Return early, no more issues will match
+    if (!wasLastUpdatedBefore(issue, longestDelay)) {
+      return operationsLeft;
+    }
+
     // Skip Exempt issues
     if (args.exemptLabels.length && isExempt(issue, args.exemptLabels)) {
       continue;
@@ -64,11 +76,7 @@ async function processIssues(
 
     // Check if it's a stale issue
     if (isLabeled(issue, args.staleLabel)) {
-      if (wasLastUpdatedBefore(issue, args.daysBeforeClose)) {
-        operationsLeft -= await closeIssue(client, issue, args.dryRun);
-      } else {
-        continue;
-      }
+      operationsLeft -= await closeIssue(client, issue, args.dryRun);
     } else if (wasLastUpdatedBefore(issue, args.daysBeforeStale)) {
       operationsLeft -= await markStale(
         client,

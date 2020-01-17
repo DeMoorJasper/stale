@@ -2974,11 +2974,16 @@ function processIssues(client, args, operationsLeft, page = 1) {
         const issues = yield client.issues.listForRepo({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
+            sort: 'updated',
+            direction: 'asc',
             state: 'open',
             per_page: 100,
             page: page
         });
         operationsLeft -= 1;
+        let longestDelay = args.daysBeforeClose > args.daysBeforeStale
+            ? args.daysBeforeClose
+            : args.daysBeforeStale;
         if (issues.data.length === 0 || operationsLeft === 0) {
             return operationsLeft;
         }
@@ -2987,18 +2992,17 @@ function processIssues(client, args, operationsLeft, page = 1) {
             if (!!issue.pull_request) {
                 continue;
             }
+            // Return early, no more issues will match
+            if (!wasLastUpdatedBefore(issue, longestDelay)) {
+                return operationsLeft;
+            }
             // Skip Exempt issues
             if (args.exemptLabels.length && isExempt(issue, args.exemptLabels)) {
                 continue;
             }
             // Check if it's a stale issue
             if (isLabeled(issue, args.staleLabel)) {
-                if (wasLastUpdatedBefore(issue, args.daysBeforeClose)) {
-                    operationsLeft -= yield closeIssue(client, issue, args.dryRun);
-                }
-                else {
-                    continue;
-                }
+                operationsLeft -= yield closeIssue(client, issue, args.dryRun);
             }
             else if (wasLastUpdatedBefore(issue, args.daysBeforeStale)) {
                 operationsLeft -= yield markStale(client, issue, args.staleMessage, args.staleLabel, args.dryRun);
