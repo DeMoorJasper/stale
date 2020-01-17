@@ -2,7 +2,7 @@
 
 Warns and then closes issues that have had no activity for a  specified amount of time.
 
-## Dry Run
+### Dry Run
 
 To ensure you don't spam your users and close or label incorrect issues this action defaults to running without actually performing any action, we call this a dry run.
 
