@@ -1,6 +1,6 @@
 name: 'Close Stale Issues'
-description: 'Close issues and pull requests with no recent activity'
-author: 'GitHub'
+description: 'Close issues with no recent activity'
+author: 'DeMoorJasper'
 inputs:
   repo-token:
     description: 'Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}'
