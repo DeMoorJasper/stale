@@ -1,5 +1,7 @@
 name: 'Close Stale Issues Safely'
 description: 'Close issues with no recent activity'
+icon: 'archive'
+color: 'purple'
 author: 'DeMoorJasper'
 inputs:
   repo-token:
