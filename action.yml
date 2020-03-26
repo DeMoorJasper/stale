@@ -20,7 +20,7 @@ inputs:
     description: 'The label to apply when an issue is stale'
     default: 'Stale'
   exempt-labels:
-    description: 'Issues with these labels cannor become stale'
+    description: 'Issues with these labels cannot become stale'
     default: 'stale-ignore, security'
   operations-per-run:
     description: 'The maximum number of operations per run, used to control rate limiting, does not apply to dry runs.'
